@@ -1,33 +1,18 @@
 require 'fileutils'
 
-#####################################
-# Copy resource files
-#####################################
+ASSETS = {
+  'stylesheets' => %w{uni-form.css uni-form-generic.css},
+  'javascripts' => %w{uni-form.prototype.js jquery.uni-form.js}
+}
 
-FileUtils.cp( 
-  File.join(File.dirname(__FILE__), 'resources', 'public', 'stylesheets', 'uni-form.css'), 
-  File.join(RAILS_ROOT, 'public', 'stylesheets'),
-  :verbose => true
-)
+ASSETS.each_pair do |dir, files|
+  files.each do |file|
+    FileUtils.cp(File.join(File.dirname(__FILE__), 'resources', 'public', dir, file),
+                 File.join(Rails.root, 'public', dir), :verbose => true)
+  end
+end
 
-FileUtils.cp( 
-  File.join(File.dirname(__FILE__), 'resources', 'public', 'stylesheets', 'uni-form-generic.css'), 
-  File.join(RAILS_ROOT, 'public', 'stylesheets'),
-  :verbose => true
-)
-
-FileUtils.cp(
-  File.join(File.dirname(__FILE__), 'resources', 'public', 'javascripts', 'uni-form.prototype.js'),
-  File.join(RAILS_ROOT, 'public', 'javascripts'),
-  :verbose => true
-)
-
-p ''
-p '========== Installation of Uni Form is completed =========='
-p ''
-
-#####################################
-# Show the README text file
-#####################################
+puts
+puts '========== Installation of "uni-form" is completed =========='
+puts
 puts IO.read(File.join(File.dirname(__FILE__), 'README'))
-
