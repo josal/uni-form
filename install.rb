@@ -1,9 +1,5 @@
 require 'fileutils'
-
-ASSETS = {
-  'stylesheets' => %w{uni-form.css uni-form-generic.css},
-  'javascripts' => %w{uni-form.prototype.js jquery.uni-form.js}
-}
+require 'assets'  # Assets info
 
 ASSETS.each_pair do |dir, files|
   files.each do |file|
