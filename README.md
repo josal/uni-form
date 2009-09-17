@@ -13,15 +13,11 @@ Usage
 
 1. Include the Javascript file (probably in your layout).
    If You prefer Prototype.js:
-
         <%= javascript_include_tag 'uni-form.prototype.js' %>
-
    If using jQuery framework:
-
         <%= javascript_include_tag 'jquery.uni-form.js' %>
 
 2. Include the stylesheet (again, probably in your layout):
-
         <%= stylesheet_link_tag 'uni-form', :media => "all" %>
 
 3. Then, to create your form you can do the following:
