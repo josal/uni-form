@@ -6,26 +6,25 @@ A plugin for generating forms using http://sprawsm.com/uni-form
 Installation
 ============
 
-./script/plugin install git://github.com/cthiel/uni-form.git
+      ./script/plugin install git://github.com/antono/uni-form.git
 
 Usage
 =====
 
-1. Include the Javascript file (probably in your layout):
+1. Include the Javascript file (probably in your layout).
+   If You prefer Prototype.js:
 
-If You prefer Prototype.js:
+        <%= javascript_include_tag 'uni-form.prototype.js' %>
 
-    <%= javascript_include_tag 'uni-form.prototype.js' %>
+   If using jQuery framework:
 
-If using jQuery framework:
-
-    <%= javascript_include_tag 'jquery.uni-form.js' %>
+        <%= javascript_include_tag 'jquery.uni-form.js' %>
 
 2. Include the stylesheet (again, probably in your layout):
 
-    <%= stylesheet_link_tag 'uni-form', :media => "all" %>
+        <%= stylesheet_link_tag 'uni-form', :media => "all" %>
 
-Then, to create your form you can do the following:
+3. Then, to create your form you can do the following:
 
     <% uni_form_for :user do |form| %>
       <% form.fieldset :type => "block", :legend => "cool stuff" do %>
