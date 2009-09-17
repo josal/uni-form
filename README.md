@@ -22,22 +22,22 @@ Usage
 
 3. Then, to create your form you can do the following:
 
-      <% uni_form_for :user do |form| %>
-        <% form.fieldset :type => "block", :legend => "cool stuff" do %>
+        <% uni_form_for :user do |form| %>
+          <% form.fieldset :type => "block", :legend => "cool stuff" do %>
 
-          <%= form.text_field :first_name, :required => true, :label => "Your first name" %>
-          <%= form.text_field :last_name %>
+            <%= form.text_field :first_name, :required => true, :label => "Your first name" %>
+            <%= form.text_field :last_name %>
 
-          <!-- grouped inputs -->
-          <% form.ctrl_group :label => 'Sex', :hint => 'Pex!' do %>
-            <%= form.radio_button(:sex, "Male", :label => 'Maaan', :checked => 'checked') %>
-            <%= form.radio_button(:sex, "Female", :label => 'Wooman') %>
+            <!-- grouped inputs -->
+            <% form.ctrl_group :label => 'Sex', :hint => 'Pex!' do %>
+              <%= form.radio_button(:sex, "Male", :label => 'Maaan', :checked => 'checked') %>
+              <%= form.radio_button(:sex, "Female", :label => 'Wooman') %>
+            <% end %>
+            <!-- /grouped inputs -->
+
           <% end %>
-          <!-- /grouped inputs -->
-
+          <%= form.submit "save" %>
         <% end %>
-        <%= form.submit "save" %>
-      <% end %>
 
 Credits
 =======
