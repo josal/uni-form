@@ -1,21 +1,23 @@
-
 require File.dirname(__FILE__) + '/../../../../config/environment'
 require File.dirname(__FILE__) + '/../lib/uni_form'
 
 require 'test/unit'
 require 'rubygems'
-require 'action_controller/test_process'
+require 'action_controller/assertions/dom_assertions'
+require 'action_view/test_case'
 
 User = Struct.new("User", :id, :first_name, :last_name, :email, :likes_dogs, :likes_cats, :sex)
 
-class UniFormTest < Test::Unit::TestCase
+class UniFormTest < ActionView::TestCase # Test::Unit::TestCase
+  tests UniForm::UniFormHelper
+
   include ActionView::Helpers::UrlHelper
   include ActionView::Helpers::TextHelper
   include ActionView::Helpers::FormHelper
   include ActionView::Helpers::FormTagHelper
   include ActionView::Helpers::TagHelper
   include ActionView::Helpers::CaptureHelper
-  include MarcusIrven::UniFormHelper
+  include ActionController::Assertions::DomAssertions
   
   alias_method :original_assert_dom_equal, :assert_dom_equal
   
@@ -46,13 +48,17 @@ class UniFormTest < Test::Unit::TestCase
       def url_for(options, *parameters_for_method_reference)
         "http://www.example.com"
       end
-    end
-    @controller = @controller.new
+    end.new
+
+    self.output_buffer = ''
+  end
+
+  def test_pass
+    assert_equal 1, 1
   end
         
   def test_empty_form
-    _erbout = ''
-  
+
     uni_form_for(:user, @user) do |f|
     end
     
@@ -60,11 +66,10 @@ class UniFormTest < Test::Unit::TestCase
       <form action="http://www.example.com" method="post" class="uniForm"></form>
     html
   
-    assert_dom_equal expected, _erbout
+    assert_dom_equal expected, output_buffer
   end
 
   def test_default_fieldset
-    _erbout = ''
   
     uni_form_for(:user, @user) do |f|
       f.fieldset do
@@ -78,11 +83,10 @@ class UniFormTest < Test::Unit::TestCase
       </form>
     html
   
-    assert_dom_equal expected, _erbout
+    assert_dom_equal expected, output_buffer
   end
 
   def test_inline_fieldset
-    _erbout = ''
   
     uni_form_for(:user, @user) do |f|
       f.fieldset :type => "inline" do
@@ -96,11 +100,10 @@ class UniFormTest < Test::Unit::TestCase
       </form>
     html
   
-    assert_dom_equal expected, _erbout
+    assert_dom_equal expected, output_buffer
   end
   
   def test_fieldset_with_legend
-    _erbout = ''
   
     uni_form_for(:user, @user) do |f|
       f.fieldset :legend => "User" do
@@ -115,11 +118,10 @@ class UniFormTest < Test::Unit::TestCase
       </form>
     html
   
-    assert_dom_equal expected, _erbout
+    assert_dom_equal expected, output_buffer
   end
   
   def test_block_fieldset
-    _erbout = ''
   
     uni_form_for(:user, @user) do |f|
       f.fieldset :type => "block" do
@@ -133,14 +135,13 @@ class UniFormTest < Test::Unit::TestCase
       </form>
     html
   
-    assert_dom_equal expected, _erbout
+    assert_dom_equal expected, output_buffer
   end
   
   def test_submit
-    _erbout = ''
   
     uni_form_for(:user, @user) do |f|
-      _erbout.concat f.submit("save")
+      output_buffer.concat f.submit("save")
     end
     
     expected = <<-html
@@ -151,7 +152,7 @@ class UniFormTest < Test::Unit::TestCase
       </form>
     html
   
-    assert_dom_equal expected, _erbout
+    assert_dom_equal expected, output_buffer
   end
   
   # def test_label_for
@@ -159,11 +160,10 @@ class UniFormTest < Test::Unit::TestCase
   # end
   
   def test_text_field
-    _erbout = ''
   
     uni_form_for(:user, @user) do |f|
       f.fieldset do
-        _erbout.concat f.text_field(:first_name)
+        f.text_field(:first_name)
       end
     end
     
@@ -178,15 +178,13 @@ class UniFormTest < Test::Unit::TestCase
       </form>
     html
   
-    assert_dom_equal expected, _erbout
+    assert_dom_equal expected, output_buffer
   end
 
   def test_text_field_with_label
-    _erbout = ''
-  
     uni_form_for(:user, @user) do |f|
       f.fieldset do
-        _erbout.concat f.text_field(:first_name, :label => "First")
+        f.text_field(:first_name, :label => "First")
       end
     end
     
@@ -201,15 +199,14 @@ class UniFormTest < Test::Unit::TestCase
       </form>
     html
   
-    assert_dom_equal expected, _erbout
+    assert_dom_equal expected, output_buffer
   end
   
   def test_required_text_field
-    _erbout = ''
   
     uni_form_for(:user, @user) do |f|
       f.fieldset do
-        _erbout.concat f.text_field(:first_name, :required => true)
+        f.text_field(:first_name, :required => true)
       end
     end
     
@@ -224,15 +221,14 @@ class UniFormTest < Test::Unit::TestCase
       </form>
     html
   
-    assert_dom_equal expected, _erbout
+    assert_dom_equal expected, output_buffer
   end
   
   def test_non_required_text_field
-    _erbout = ''
-  
+
     uni_form_for(:user, @user) do |f|
       f.fieldset do
-        _erbout.concat f.text_field(:first_name, :required => false)
+        f.text_field(:first_name, :required => false)
       end
     end
     
@@ -247,15 +243,14 @@ class UniFormTest < Test::Unit::TestCase
       </form>
     html
   
-    assert_dom_equal expected, _erbout
+    assert_dom_equal expected, output_buffer
   end
   
   def test_text_field_with_hint
-    _erbout = ''
   
     uni_form_for(:user, @user) do |f|
       f.fieldset do
-        _erbout.concat f.text_field(:first_name, :hint => "Your given name")
+        f.text_field(:first_name, :hint => "Your given name")
       end
     end
     
@@ -271,14 +266,12 @@ class UniFormTest < Test::Unit::TestCase
       </form>
     html
     
-    assert_dom_equal expected, _erbout
+    assert_dom_equal expected, output_buffer
   end
   
   def test_hidden_field
-    _erbout = ''
-  
     uni_form_for(:user, @user) do |f|
-      _erbout.concat f.hidden_field(:id)
+      output_buffer.concat f.hidden_field(:id)
     end
     
     expected = <<-html
@@ -287,9 +280,9 @@ class UniFormTest < Test::Unit::TestCase
       </form>
     html
     
-    assert_dom_equal expected, _erbout
+    assert_dom_equal expected, output_buffer
   end
-  # 
+   
   # #Whats up with class="", also look at label
   # def test_check_box
   #   _erbout = ''
@@ -311,28 +304,32 @@ class UniFormTest < Test::Unit::TestCase
   #   assert_dom_equal expected, _erbout
   # end
 
-#  def test_radio_buttons
-#    _erbout = ''
-#
-#    uni_form_for(:user, @user) do |f|
-#      f.ctrl_group do
-#        _erbout.concat f.radio_button(:sex, "M")
-#        _erbout.concat f.radio_button(:sex, "F")
-#      end
-#    end
-#    
-#    expected = <<-html
-#      <form action="http://www.example.com" method="post" class="uniForm">
-#          <div class="ctrlHolder">
-#            <label class="inlineLabel" for="user_likes_dogs">Sex</label>
-#            <input name="user[sex]" type="radio" id="user_sex_m" value="M" class="" checked="checked"/>
-#            <input name="user[sex]" type="radio" id="user_sex_f" value="F" class="" checked="checked"/>
-#          </div>
-#      </form>
-#    html
-#    
-#    assert_dom_equal expected, _erbout
-#  end
+  def test_radio_buttons
+
+    uni_form_for(:user, @user) do |f|
+      f.ctrl_group :label => 'Sex', :hint => 'Pex!' do
+        output_buffer.concat f.radio_button(:sex, "Male", :label => 'Maaan', :checked => 'checked')
+        output_buffer.concat f.radio_button(:sex, "Female", :label => 'Wooman')
+      end
+    end
+
+    expected = <<-html
+     <form action="http://www.example.com" method="post" class="uniForm">
+         <div class="ctrlHolder">
+           <p class="label">Sex</p>
+           <div class="multiField">
+             <label class="blockLabel" for="user_sex_male">
+               <input name="user[sex]" type="radio" id="user_sex_male" value="Male" checked="checked"/>Maaan</label>
+             <label class="blockLabel" for="user_sex_female">
+               <input name="user[sex]" type="radio" id="user_sex_female" value="Female" />Wooman</label>
+           </div>
+           <p class="formHint">Pex!</p>
+         </div>
+     </form>
+    html
+
+    assert_dom_equal expected, output_buffer
+  end
   
   
   
