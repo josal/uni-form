@@ -138,14 +138,10 @@ module UniForm #:nodoc:
       options = args.last.is_a?(Hash) ? args.pop : {}
 
       content = @template.capture(&proc)
-      content = @template.content_tag(:legend, options[:legend]) + (content || '') if options.has_key? :legend
+      content = @template.content_tag(:legend, options.delete(:legend)) + (content || '')  if options.has_key?(:legend) 
 
-      classname = options[:class]
-      classname = "" if classname.nil?
-      classname << " " << (options[:type] == ("inline" || :inline) ? "inlineLabels" : "blockLabels")
-
-      options.delete(:legend)
-      options.delete(:type)
+      classname = options[:class] || ''
+      classname << " " << (options.delete(:type) == ("inline" || :inline) ? "inlineLabels" : "blockLabels")
 
       @template.concat(@template.content_tag(:fieldset, content, options.merge({ :class => classname.strip })))
     end
