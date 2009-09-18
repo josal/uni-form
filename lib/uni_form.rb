@@ -141,7 +141,7 @@ module UniForm #:nodoc:
       content = @template.content_tag(:legend, options.delete(:legend)) + (content || '')  if options.has_key?(:legend) 
 
       classname = options[:class] || ''
-      classname << " " << (options.delete(:type) == ("inline" || :inline) ? "inlineLabels" : "blockLabels")
+      classname << " " << (options.delete(:type).to_s == "inline" ? "inlineLabels" : "blockLabels")
 
       @template.concat(@template.content_tag(:fieldset, content, options.merge({ :class => classname.strip })))
     end

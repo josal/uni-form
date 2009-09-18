@@ -101,6 +101,15 @@ class UniFormTest < ActionView::TestCase # Test::Unit::TestCase
     html
   
     assert_dom_equal expected, output_buffer
+
+    self.output_buffer = ''
+
+    uni_form_for(:user, @user) do |f|
+      f.fieldset :type => :inline do
+      end
+    end
+
+    assert_dom_equal expected, output_buffer
   end
   
   def test_fieldset_with_legend
