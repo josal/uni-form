@@ -28,26 +28,13 @@ module UniForm #:nodoc:
     #   label_for('post', 'category', 'text' => 'This Category')
     #     <label for="post_category">This Category</label>
     def label_for(object_name, method, options = {})
-      # puts "----text: " + options[:text] if options[:text]
-      # puts "----del: " + options.delete(:text) if options[:text]
-      # puts "---or:" + ((options.delete('text') || method.to_s.humanize)
       label = options[:text] ? options[:text] : method.to_s.humanize
       options.delete(:text)
       ActionView::Helpers::InstanceTag.new(object_name, method, self, options.delete(:object)).to_label_tag2(label, options)
-      # ActionView::Helpers::InstanceTag.new(object_name, method, self, nil,
-      # options.delete(:object)).to_label_tag2(options[:text] ? options.delete('text') : method.to_s.humanize, options) 
     end
-
-    # Creates a label tag.
-    #   label_tag('post_title', 'Title')
-    #     <label for="post_title">Title</label>
-    # def label_tag(name, text, options = {})
-    #   content_tag('label', text, { 'for' => name }.merge(options.stringify_keys))
-    # end
   end
 
   module LabeledInstanceTag #:nodoc:
-    # def to_label_tag(options = {})
     def to_label_tag2(text = nil, options = {})
       options = options.stringify_keys
       add_default_name_and_id(options)
@@ -58,6 +45,7 @@ module UniForm #:nodoc:
     end
   end
 
+
   module FormBuilderMethods #:nodoc:
     def label_for(method, options = {})
       @template.label_for(@object_name, method, options.merge(:object => @object))
@@ -65,36 +53,36 @@ module UniForm #:nodoc:
   end
 
   class UniFormBuilder < ActionView::Helpers::FormBuilder #:nodoc:
-    (['date_select'] + self.field_helpers - %w(label_for hidden_field form_for fields_for)).each do |selector|
+    (self.field_helpers - %w(label_for hidden_field form_for fields_for)).each do |selector|
 
-        field_classname =
-          case selector
-            when "text_field": "textInput"
-            when "password_field": "textInput"
-            when "file_upload": "fileUpload"
-            else ""
-          end
+      field_classname =
+        case selector
+        when "text_field": "textInput"
+        when "password_field": "textInput"
+        when "file_upload": "fileUpload"
+        else ""
+        end
 
-        label_classname =
-          case selector
-            when "check_box", "radio_button": "inlineLabel"
-            else ""
-          end
+      label_classname =
+        case selector
+        when "check_box", "radio_button": "inlineLabel"
+        else ""
+        end
 
-        src = <<-end_src
-          def #{selector}(method, options = {})
-            label_options = {}
-            label_classname = "#{label_classname}"
-            label_options.update(:class => label_classname) unless label_classname.blank?
-            if options.has_key?(:class)
-              field_classnames = [ '#{field_classname}', options[:class] ].join(" ")
-            else
-              field_classnames = '#{field_classname}'
-            end
-            render_field(method, options, super(method, clean_options(options.merge(:class => field_classnames))), label_options)
+      src = <<-end_src
+        def #{selector}(method, options = {})
+          label_options = {}
+          label_classname = "#{label_classname}"
+          label_options.update(:class => label_classname) unless label_classname.blank?
+          if options.has_key?(:class)
+            field_classnames = [ '#{field_classname}', options[:class] ].join(" ")
+          else
+            field_classnames = '#{field_classname}'
           end
-        end_src
-        class_eval src, __FILE__, __LINE__
+          render_field(method, options, super(method, clean_options(options.merge(:class => field_classnames))), label_options)
+        end
+      end_src
+      class_eval src, __FILE__, __LINE__
     end
 
     def submit(value = "Save changes", options = {})
@@ -102,10 +90,11 @@ module UniForm #:nodoc:
       if disable_with = options.delete("disable_with")
         options["onclick"] = "this.disabled=true;this.value='#{disable_with}';this.form.submit();#{options["onclick"]}"
       end
-      
+
       button = @template.content_tag(:button, value, { "type" => "submit", "name" => "commit", :class => "submitButton"}.update(options.stringify_keys))
       @template.content_tag :div, button, :class => "buttonHolder"
     end
+
 
     def radio_button(method, tag_value, options = {})
       label = (options.delete(:label) if options.has_key?(:label)) || tag_value
@@ -138,7 +127,7 @@ module UniForm #:nodoc:
       options = args.last.is_a?(Hash) ? args.pop : {}
 
       content = @template.capture(&proc)
-      content = @template.content_tag(:legend, options.delete(:legend)) + (content || '')  if options.has_key?(:legend) 
+      content = @template.content_tag(:legend, options.delete(:legend)) + (content || '')  if options.has_key?(:legend)
 
       classname = options[:class] || ''
       classname << " " << (options.delete(:type).to_s == "inline" ? "inlineLabels" : "blockLabels")
@@ -149,12 +138,17 @@ module UniForm #:nodoc:
     def ctrl_group(args, &proc)
       raise ArgumentError, "Missing block" unless block_given?
 
+      label = ''
+      label << '<em> * </em>' if args[:required]
+      label << args[:label]   if args[:label]
+
+      content = ""
+
       @ctrl_group = true
       block_content = @template.capture(&proc)
-      content = ""
-      content << @template.content_tag(:p, args[:label], :class => 'label') if args[:label]
+      content << @template.content_tag(:p, label, :class => 'label') unless label.blank?
       content << @template.content_tag(:div, block_content, :class => 'multiField')
-      content << @template.content_tag(:p, args[:hint], :class => 'formHint')        if args[:hint]
+      content << @template.content_tag(:p, args[:hint], :class => 'formHint') if args[:hint]
       @template.concat(@template.content_tag(:div, content, :class => "ctrlHolder"))
       @ctrl_group = nil
     end
@@ -242,19 +236,19 @@ module UniForm #:nodoc:
       wrapper_class << ' col' if options.delete(:column)
       wrapper_class << options.delete(:ctrl_class) if options.has_key? :ctrl_class
       wrapper_class << ' error' if not errors.nil?
-      
+
       if @ctrl_group.nil? # <label for="cool" ...>descr</label><input id="cool" ..>
         div_content << label_for(method, label_options) + field_tag
-      else 
-        # Using block labels for grouped fields: 
+      else
+        # Using block labels for grouped fields:
         # <label for="cool" class="blockLabel"><input id="cool" ..>descr</label>
         label_options.merge!(:class => 'blockLabel')
         # FIXME: someday...
-        # Correct labels for radiobuttons 
-        # Html id's of radiobuttons created from "object_field" + "_value" 
+        # Correct labels for radiobuttons
+        # Html id's of radiobuttons created from "object_field" + "_value"
         # So we need find value of radiobutton here or just grep our field
         # tag for acutal id:
-        label_options[:for] = field_tag.match(/id=\"(\S*?)\"/)[1] 
+        label_options[:for] = field_tag.match(/id=\"(\S*?)\"/)[1]
         div_content << @template.content_tag(:label, field_tag << (label_options.delete(:text) || ''), label_options)
       end
 
