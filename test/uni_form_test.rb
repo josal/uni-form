@@ -341,8 +341,8 @@ class UniFormTest < ActionView::TestCase # Test::Unit::TestCase
   def test_radio_buttons
 
     uni_form_for(:user, @user) do |f|
-      f.ctrl_group :label => 'Sex', :hint => 'Pex!', :required => true do
-        output_buffer.concat f.radio_button(:sex, "Male", :label => 'Maaan', :checked => 'checked')
+      f.multi_field :label => 'Sex', :hint => 'Pex!', :required => true  do
+        output_buffer.concat f.radio_button(:sex, "Male",   :label => 'Maaan', :checked => 'checked')
         output_buffer.concat f.radio_button(:sex, "Female", :label => 'Wooman')
       end
     end
@@ -352,10 +352,8 @@ class UniFormTest < ActionView::TestCase # Test::Unit::TestCase
          <div class="ctrlHolder">
            <p class="label"><em> * </em>Sex</p>
            <div class="multiField">
-             <label class="blockLabel" for="user_sex_male">
-               <input name="user[sex]" type="radio" id="user_sex_male" value="Male" checked="checked"/>Maaan</label>
-             <label class="blockLabel" for="user_sex_female">
-               <input name="user[sex]" type="radio" id="user_sex_female" value="Female" />Wooman</label>
+             <label class="blockLabel"><input name="user[sex]" type="radio" id="user_sex_male" value="Male" checked="checked"/>Maaan</label>
+             <label class="blockLabel"><input name="user[sex]" type="radio" id="user_sex_female" value="Female" />Wooman</label>
            </div>
            <p class="formHint">Pex!</p>
          </div>
@@ -371,7 +369,7 @@ class UniFormTest < ActionView::TestCase # Test::Unit::TestCase
                       # names (russian gem and similar extensions)
 
     uni_form_for(:user, @user) do |f|
-      f.ctrl_group :label => 'Date of birth', :hint => 'Be honest!', :required => true do
+      f.multi_field :label => 'Date of birth', :hint => 'Be honest!', :required => true do
         f.date_select(:dob)
       end
     end
@@ -381,7 +379,7 @@ class UniFormTest < ActionView::TestCase # Test::Unit::TestCase
         <div class="ctrlHolder">
           <p class="label"><em> * </em>Date of birth</p>
           <div class="multiField">
-            <label class="blockLabel" for="user_dob_1i">
+            <label class="blockLabel">
               <select name="user[dob(1i)]" id="user_dob_1i">
                 <option value="1977">1977</option>
                 <option value="1978">1978</option>
@@ -396,7 +394,7 @@ class UniFormTest < ActionView::TestCase # Test::Unit::TestCase
                 <option value="1987">1987</option>
               </select>
             </label>
-            <label class="blockLabel" for="user_dob_2i">
+            <label class="blockLabel">
               <select name="user[dob(2i)]" id="user_dob_2i">
                 <option value="1">January</option>
                 <option value="2">February</option>
@@ -412,7 +410,7 @@ class UniFormTest < ActionView::TestCase # Test::Unit::TestCase
                 <option value="12">December</option>
               </select>
             </label>
-            <label class="blockLabel" for="user_dob_3i">
+            <label class="blockLabel">
               <select name="user[dob(3i)]" id="user_dob_3i">
                 <option value="1">1</option>
                 <option value="2">2</option>

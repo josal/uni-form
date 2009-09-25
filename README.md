@@ -28,12 +28,12 @@ Usage
             <%= form.text_field :first_name, :required => true, :label => "Your first name" %>
             <%= form.text_field :last_name %>
 
-            <!-- grouped inputs -->
-            <% form.ctrl_group :label => 'Sex', :hint => 'Pex!' do %>
+            <!-- multifield inputs -->
+            <% form.multi_field :label => 'Sex', :hint => 'Pex!', :required => true do %>
               <%= form.radio_button(:sex, "Male", :label => 'Maaan', :checked => 'checked') %>
               <%= form.radio_button(:sex, "Female", :label => 'Wooman') %>
             <% end %>
-            <!-- /grouped inputs -->
+            <!-- /multifield inputs -->
 
           <% end %>
           <%= form.submit "save" %>
@@ -42,6 +42,12 @@ Usage
 Credits
 =======
 
-Based on the original uni-form plugin by Marcus Irvin
+CSS and XTHML files provided by Dragan Babić under the terms of
+http://creativecommons.org/licenses/by-sa/2.5/
+
+You can find original repository at:
+http://creativecommons.org/licenses/by-sa/2.5/
+
+Rails plugin based on the original uni-form plugin by Marcus Irvin
 http://github.com/mirven/uni-form/tree and
 http://github.com/thewebfellas/uni-form/tree/master

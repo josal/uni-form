@@ -30,21 +30,19 @@ module UniForm #:nodoc:
     def label_for(object_name, method, options = {})
       label = options[:text] ? options[:text] : method.to_s.humanize
       options.delete(:text)
-      ActionView::Helpers::InstanceTag.new(object_name, method, self, options.delete(:object)).to_label_tag2(label, options)
+      ActionView::Helpers::InstanceTag.new(object_name, method, self, options.delete(:object)).to_uni_label_tag(label, options)
     end
   end
 
-  module LabeledInstanceTag #:nodoc:
-    def to_label_tag2(text = nil, options = {})
+  module UniInstanceTag #:nodoc:
+    def to_uni_label_tag(text = nil, options = {})
       options = options.stringify_keys
       add_default_name_and_id(options)
       options.delete('name')
       options['for'] = options.delete('id')
-      # content_tag 'label', (options.delete('required') ? "<em>*</em> " : "") + ((options.delete('text') || @method_name.humanize)), options
       content_tag 'label', (options.delete('required') ? "<em>*</em> " : "") + text, options
     end
   end
-
 
   module FormBuilderMethods #:nodoc:
     def label_for(method, options = {})
@@ -74,11 +72,7 @@ module UniForm #:nodoc:
           label_options = {}
           label_classname = "#{label_classname}"
           label_options.update(:class => label_classname) unless label_classname.blank?
-          if options.has_key?(:class)
-            field_classnames = [ '#{field_classname}', options[:class] ].join(" ")
-          else
-            field_classnames = '#{field_classname}'
-          end
+          field_classnames = options.has_key?(:class) ?  ['#{field_classname}', options[:class]].join(" ") : '#{field_classname}'
           render_field(method, options, super(method, clean_options(options.merge(:class => field_classnames))), label_options)
         end
       end_src
@@ -95,9 +89,8 @@ module UniForm #:nodoc:
       @template.content_tag :div, button, :class => "buttonHolder"
     end
 
-
     def radio_button(method, tag_value, options = {})
-      label = (options.delete(:label) if options.has_key?(:label)) || tag_value
+      label = (options.delete(:label) if options.has_key?(:label)) || tag_value.capitalize
       super_options = options.dup
       render_field(method, options.merge!(:label => label), super(method, tag_value, super_options))
     end
@@ -122,6 +115,16 @@ module UniForm #:nodoc:
       super
     end
 
+    def date_select(method, options = {})
+      render_field(method, options.merge(:multi_tag => true), super(method, options))
+    end
+
+    # Creates scope for rendering fieldset
+    #
+    # Options:
+    #     :legend => string
+    #     :type   => :inline | :block
+    #
     def fieldset(*args, &proc)
       raise ArgumentError, "Missing block" unless block_given?
       options = args.last.is_a?(Hash) ? args.pop : {}
@@ -135,22 +138,30 @@ module UniForm #:nodoc:
       @template.concat(@template.content_tag(:fieldset, content, options.merge({ :class => classname.strip })))
     end
 
-    def ctrl_group(args, &proc)
+    # Creates scope for rendering multifield inputs
+    #
+    # Options:
+    #     :label => string
+    #     :hint  => string
+    #     :required => boolean
+    #
+    def multi_field(args, &proc)
       raise ArgumentError, "Missing block" unless block_given?
 
       label = ''
       label << '<em> * </em>' if args[:required]
       label << args[:label]   if args[:label]
 
-      content = ""
 
-      @ctrl_group = true
+      @multi_field = true
       block_content = @template.capture(&proc)
+      @multi_field = false
+
+      content = ""
       content << @template.content_tag(:p, label, :class => 'label') unless label.blank?
       content << @template.content_tag(:div, block_content, :class => 'multiField')
       content << @template.content_tag(:p, args[:hint], :class => 'formHint') if args[:hint]
       @template.concat(@template.content_tag(:div, content, :class => "ctrlHolder"))
-      @ctrl_group = nil
     end
 
     def error_messages(options={})
@@ -187,44 +198,15 @@ module UniForm #:nodoc:
        error_messages + info_message
     end
 
-
-#    # This is a minorly modified version from actionview
-#    # actionpack/lib/action_view/helpers/active_record_helper.rb
-#    def uni_error_messages_for(*params)
-#      options = params.last.is_a?(Hash) ? params.pop.symbolize_keys : {}
-#      objects = params.collect {|object_name| instance_variable_get("@#{object_name}") }.compact
-#      count   = objects.inject(0) {|sum, object| sum + object.errors.count }
-#      unless count.zero?
-#        html = {}
-#        [:id, :class].each do |key|
-#          if options.include?(key)
-#            value = options[key]
-#            html[key] = value unless value.blank?
-#          else
-#            html[key] = 'errorMsg'
-#          end
-#        end
-#        header_message = "Ooops!"
-#        error_messages = objects.map {|object| object.errors.full_messages.map {|msg| content_tag(:li, msg) } }
-#        content_tag(:div,
-#          content_tag(options[:header_tag] || :h3, header_message) <<
-#            content_tag(:p, 'There were problems with the following fields:') <<
-#            content_tag(:ul, error_messages),
-#          html
-#        )
-#      else
-#        ''
-#      end
-#    end
-#
-
     private
 
+    # Generic renderer for uni-form div with inputs (ctrlHolder)
     def render_field(method, options, field_tag, base_label_options = {})
-      label_options = { :required => options.delete(:required)}
+      label_options = { :required => options.delete(:required) }
       label_options.update(base_label_options)
       label_options.update(:text => options.delete(:label)) if options.has_key? :label
 
+      multi_tag = options.delete :multi_tag # this should be true for multitag selects like datetimes
       hint = options.delete :hint
 
       obj = @object || @template.instance_variable_get("@#{@object_name}")
@@ -232,37 +214,64 @@ module UniForm #:nodoc:
 
       div_content = errors.nil? ? "" : @template.content_tag('p', errors.class == Array ? errors.first : errors, :class => "errorField")
 
-      wrapper_class = 'ctrlHolder'
-      wrapper_class << ' col' if options.delete(:column)
+      wrapper_class = ['ctrlHolder']
+      wrapper_class << 'col' if options.delete(:column)
       wrapper_class << options.delete(:ctrl_class) if options.has_key? :ctrl_class
-      wrapper_class << ' error' if not errors.nil?
+      wrapper_class << 'error' if not errors.nil?
 
-      if @ctrl_group.nil? # <label for="cool" ...>descr</label><input id="cool" ..>
+      if @multi_field # rendering select inside label
+        if multi_tag
+          # if rendering multi_tag select (as date, datetime etc...)
+          # just passing tag to wrapper. Labels already was added by monkey
+          # patched ActionView::Helpers::DateTimeSelector#build_select (see below)
+          div_content << field_tag
+        else
+          # FIXME use inlineLabels for checkboxes
+          label_options.merge!(:class => 'blockLabel')
+          div_content << @template.content_tag(:label, field_tag << (label_options.delete(:text) || ''), label_options)
+        end
+      else # rendering select after label
         div_content << label_for(method, label_options) + field_tag
-      else
-        # Using block labels for grouped fields:
-        # <label for="cool" class="blockLabel"><input id="cool" ..>descr</label>
-        label_options.merge!(:class => 'blockLabel')
-        # FIXME: someday...
-        # Correct labels for radiobuttons
-        # Html id's of radiobuttons created from "object_field" + "_value"
-        # So we need find value of radiobutton here or just grep our field
-        # tag for acutal id:
-        label_options[:for] = field_tag.match(/id=\"(\S*?)\"/)[1]
-        div_content << @template.content_tag(:label, field_tag << (label_options.delete(:text) || ''), label_options)
       end
 
       div_content << @template.content_tag('p', hint, :class => 'formHint') if not hint.blank?
 
-      if @ctrl_group.nil?
-        @template.content_tag('div', div_content, :class => wrapper_class)
-      else
+      if @multi_field
         div_content
+      else
+        @template.content_tag('div', div_content, :class => wrapper_class.join(' '))
       end
     end
 
     def clean_options(options)
-      options.reject { |key, value| key == :required or key == :label or key == :hint or key == :column or key == :ctrl_class}
+      options.reject { |key, value| [:required, :label, :hint, :column, :ctrl_class].include? key }
+    end
+  end
+end
+
+# XXX Monkey patch for build_select
+# We need selects wrapped by <label class="blockLabel">
+module ActionView
+  module Helpers
+    class DateTimeSelector
+      # Builds select tag from date type and html select options
+      #  build_select(:month, "<option value="1">January</option>...")
+      #  => "<select id="post_written_on_2i" name="post[written_on(2i)]">
+      #        <option value="1">January</option>...
+      #      </select>"
+      def build_select(type, select_options_as_html)
+        select_options = {
+          :id => input_id_from_type(type),
+          :name => input_name_from_type(type)
+        }.merge(@html_options)
+        select_options.merge!(:disabled => 'disabled') if @options[:disabled]
+
+        select_html = "\n"
+        select_html << content_tag(:option, '', :value => '') + "\n" if @options[:include_blank]
+        select_html << prompt_option_tag(type, @options[:prompt]) + "\n" if @options[:prompt]
+        select_html << select_options_as_html.to_s
+        content_tag(:label, content_tag(:select, select_html, select_options) + "\n", :class => 'blockLabel')
+      end
     end
   end
 end
