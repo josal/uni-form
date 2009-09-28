@@ -166,8 +166,7 @@ module UniForm #:nodoc:
 
     def error_messages(options={})
       obj = @object || @template.instance_variable_get("@#{@object_name}")
-      count = obj.errors.count
-      unless count.zero?
+      unless obj.errors.count.zero?
         html = {}
         [:id, :class].each do |key|
           if options.include?(key)
@@ -177,13 +176,10 @@ module UniForm #:nodoc:
             html[key] = 'errorMsg'
           end
         end
-        header_message = "Ooops!"
-        error_messages = obj.errors.full_messages.map {|msg| @template.content_tag(:li, msg) }
+        error_messages = obj.errors.full_messages.map { |msg| @template.content_tag(:li, msg) }
         @template.content_tag(:div,
-          @template.content_tag(options[:header_tag] || :h3, header_message) <<
-            @template.content_tag(:ol, error_messages),
-          html
-        )
+          @template.content_tag(options[:header_tag] || :h3, options[:header_message] || "Ooops!") <<
+            @template.content_tag(:ol, error_messages), html)
       else
         ''
       end
@@ -227,6 +223,8 @@ module UniForm #:nodoc:
           div_content << field_tag
         else
           # FIXME use inlineLabels for checkboxes
+          # FIXME inliners = %w(checkbox radio)
+          # FIXME
           label_options.merge!(:class => 'blockLabel')
           div_content << @template.content_tag(:label, field_tag << (label_options.delete(:text) || ''), label_options)
         end
@@ -270,7 +268,7 @@ module ActionView
         select_html << content_tag(:option, '', :value => '') + "\n" if @options[:include_blank]
         select_html << prompt_option_tag(type, @options[:prompt]) + "\n" if @options[:prompt]
         select_html << select_options_as_html.to_s
-        content_tag(:label, content_tag(:select, select_html, select_options) + "\n", :class => 'blockLabel')
+        content_tag(:label, content_tag(:select, select_html, select_options) + "\n", :class => "blockLabel #{type}")
       end
     end
   end

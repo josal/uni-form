@@ -6,7 +6,6 @@ require 'rubygems'
 require 'date'
 if Rails.version >= '3.0'
   require 'action_dispatch/testing/assertions'
-
   # XXX keep this until bug in 3.0 will be fixed
   # https://rails.lighthouseapp.com/projects/8994/tickets/3132-simple-rack-test-fails
   gem "rack", "~> 1.0.0"
@@ -17,7 +16,7 @@ end
 require 'action_view/test_case'
 
 
-class UniFormTest < ActionView::TestCase # Test::Unit::TestCase
+class UniFormTest < ActionView::TestCase
   tests UniForm::UniFormHelper
 
   include ActionView::Helpers::UrlHelper
@@ -29,23 +28,25 @@ class UniFormTest < ActionView::TestCase # Test::Unit::TestCase
 
   alias_method :original_assert_dom_equal, :assert_dom_equal
 
-  User = Struct.new("User", :id, :first_name, :last_name, :email, :likes_dogs, :likes_cats, :sex, :dob)
+  User = Struct.new("User", :id, :first_name, :last_name, :email, :likes_dogs, :likes_cats, :sex, :dob, :was_born_at, :messages)
+  Message = Struct.new("Message", :id, :user_id, :title, :text, :created_at)
 
   # had to add this to get the tests to run with rails 2.0, maybe a better way?
   def protect_against_forgery?
   end
 
   def setup
-    @user = User.new
 
+    @user = User.new
     @user.id = 45
     @user.first_name = "Marcus"
     @user.last_name = "Irven"
     @user.email = "marcus@example.com"
     @user.likes_dogs = true
-    @user.likes_cats = true
+    @user.likes_cats = false
     @user.sex = "M"
     @user.dob = Date.new(1982,9,11)
+    @user.was_born_at = Time.at(123456789)
 
     def @user.errors()
       Class.new do
@@ -53,6 +54,13 @@ class UniFormTest < ActionView::TestCase # Test::Unit::TestCase
           nil
         end
       end.new
+    end
+
+    @user.messages = (1..5).to_a.collect do |n|
+      m = Message.new
+      m.id = n
+      m.title = "Title #{n}"
+      m.text  = "Text #{n}"
     end
 
     @controller = Class.new do
@@ -327,11 +335,59 @@ class UniFormTest < ActionView::TestCase # Test::Unit::TestCase
 
     expected = <<-html
       <form action="http://www.example.com" method="post" class="uniForm">
-          <div class="ctrlHolder">
-            <label class="inlineLabel" for="user_likes_dogs">Likes dogs</label>
-            <input name="user[likes_dogs]" value="0" type="hidden" />
-            <input name="user[likes_dogs]" checked="checked" class="" id="user_likes_dogs" value="1" type="checkbox" />
+        <div class="ctrlHolder">
+          <label class="inlineLabel" for="user_likes_dogs">Likes dogs</label>
+          <input name="user[likes_dogs]" value="0" type="hidden" />
+          <input name="user[likes_dogs]" checked="checked" class="" id="user_likes_dogs" value="1" type="checkbox" />
+        </div>
+      </form>
+    html
+
+    assert_dom_equal expected, output_buffer
+
+    self.output_buffer = ''
+
+    uni_form_for(:user, @user) do |f|
+      output_buffer.concat f.check_box(:likes_dogs, :label => 'Likez dogzzz')
+    end
+
+    expected = <<-html
+      <form action="http://www.example.com" method="post" class="uniForm">
+        <div class="ctrlHolder">
+          <label class="inlineLabel" for="user_likes_dogs">Likez dogzzz</label>
+          <input name="user[likes_dogs]" value="0" type="hidden" />
+          <input name="user[likes_dogs]" checked="checked" class="" id="user_likes_dogs" value="1" type="checkbox" />
+        </div>
+      </form>
+    html
+
+    assert_dom_equal expected, output_buffer
+  end
+
+  # TODO Whats up with input class=""
+  def test_multifield_check_boxes
+
+    uni_form_for(:user, @user) do |f|
+      f.multi_field :label => 'Some Questions', :hint => 'Lala', :required => true  do
+        output_buffer.concat f.check_box(:likes_dogs, :label => 'Likes dogs?')
+        output_buffer.concat f.check_box(:likes_cats, :label => 'Likes cats?')
+      end
+    end
+
+    expected = <<-html
+      <form action="http://www.example.com" method="post" class="uniForm">
+        <div class="ctrlHolder">
+          <p class="label"><em> * </em>Some Questions</p>
+          <div class="multiField">
+            <label class="blockLabel">
+              <input name="user[likes_dogs]" value="0" type="hidden" />
+              <input name="user[likes_dogs]" class="" id="user_likes_dogs" value="1" type="checkbox" checked="checked" />Likes dogs?</label>
+            <label class="blockLabel">
+              <input name="user[likes_cats]" value="0" type="hidden" />
+              <input name="user[likes_cats]" class="" id="user_likes_cats" value="1" type="checkbox" />Likes cats?</label>
           </div>
+          <p class="formHint">Lala</p>
+        </div>
       </form>
     html
 
@@ -379,7 +435,7 @@ class UniFormTest < ActionView::TestCase # Test::Unit::TestCase
         <div class="ctrlHolder">
           <p class="label"><em> * </em>Date of birth</p>
           <div class="multiField">
-            <label class="blockLabel">
+            <label class="blockLabel year">
               <select name="user[dob(1i)]" id="user_dob_1i">
                 <option value="1977">1977</option>
                 <option value="1978">1978</option>
@@ -394,7 +450,7 @@ class UniFormTest < ActionView::TestCase # Test::Unit::TestCase
                 <option value="1987">1987</option>
               </select>
             </label>
-            <label class="blockLabel">
+            <label class="blockLabel month">
               <select name="user[dob(2i)]" id="user_dob_2i">
                 <option value="1">January</option>
                 <option value="2">February</option>
@@ -410,7 +466,7 @@ class UniFormTest < ActionView::TestCase # Test::Unit::TestCase
                 <option value="12">December</option>
               </select>
             </label>
-            <label class="blockLabel">
+            <label class="blockLabel day">
               <select name="user[dob(3i)]" id="user_dob_3i">
                 <option value="1">1</option>
                 <option value="2">2</option>
@@ -451,6 +507,159 @@ class UniFormTest < ActionView::TestCase # Test::Unit::TestCase
       </form>
     html
 
+    assert_dom_equal expected, output_buffer
+  end
+
+  def test_time_select
+    I18n.locale = :en # explicitly set to :en to avoid errors with month
+                      # names (russian gem and similar extensions)
+
+    uni_form_for(:user, @user) do |f|
+      f.multi_field :label => 'Time of birth', :hint => 'Be honest!', :required => true do
+        f.time_select(:was_born_at)
+      end
+    end
+
+    expected = <<-html
+      <form action="http://www.example.com" class="uniForm" method="post">
+        <div class="ctrlHolder">
+          <p class="label"><em> * </em>Time of birth</p>
+          <div class="multiField">
+          <input id="user_was_born_at_1i" name="user[was_born_at(1i)]" type="hidden" value="1973" />
+          <input id="user_was_born_at_2i" name="user[was_born_at(2i)]" type="hidden" value="11" />
+          <input id="user_was_born_at_3i" name="user[was_born_at(3i)]" type="hidden" value="30" />
+          <label class="blockLabel hour">
+            <select id="user_was_born_at_4i" name="user[was_born_at(4i)]">
+              <option selected="selected" value="00">00</option>
+              <option value="01">01</option>
+              <option value="02">02</option>
+              <option value="03">03</option>
+              <option value="04">04</option>
+              <option value="05">05</option>
+              <option value="06">06</option>
+              <option value="07">07</option>
+              <option value="08">08</option>
+              <option value="09">09</option>
+              <option value="10">10</option>
+              <option value="11">11</option>
+              <option value="12">12</option>
+              <option value="13">13</option>
+              <option value="14">14</option>
+              <option value="15">15</option>
+              <option value="16">16</option>
+              <option value="17">17</option>
+              <option value="18">18</option>
+              <option value="19">19</option>
+              <option value="20">20</option>
+              <option value="21">21</option>
+              <option value="22">22</option>
+              <option value="23">23</option>
+            </select>
+            </label> : <label class="blockLabel minute">
+              <select id="user_was_born_at_5i" name="user[was_born_at(5i)]">
+                <option value="00">00</option>
+                <option value="01">01</option>
+                <option value="02">02</option>
+                <option value="03">03</option>
+                <option value="04">04</option>
+                <option value="05">05</option>
+                <option value="06">06</option>
+                <option value="07">07</option>
+                <option value="08">08</option>
+                <option value="09">09</option>
+                <option value="10">10</option>
+                <option value="11">11</option>
+                <option value="12">12</option>
+                <option value="13">13</option>
+                <option value="14">14</option>
+                <option value="15">15</option>
+                <option value="16">16</option>
+                <option value="17">17</option>
+                <option value="18">18</option>
+                <option value="19">19</option>
+                <option value="20">20</option>
+                <option value="21">21</option>
+                <option value="22">22</option>
+                <option value="23">23</option>
+                <option value="24">24</option>
+                <option value="25">25</option>
+                <option value="26">26</option>
+                <option value="27">27</option>
+                <option value="28">28</option>
+                <option value="29">29</option>
+                <option value="30">30</option>
+                <option value="31">31</option>
+                <option value="32">32</option>
+                <option selected="selected" value="33">33</option>
+                <option value="34">34</option>
+                <option value="35">35</option>
+                <option value="36">36</option>
+                <option value="37">37</option>
+                <option value="38">38</option>
+                <option value="39">39</option>
+                <option value="40">40</option>
+                <option value="41">41</option>
+                <option value="42">42</option>
+                <option value="43">43</option>
+                <option value="44">44</option>
+                <option value="45">45</option>
+                <option value="46">46</option>
+                <option value="47">47</option>
+                <option value="48">48</option>
+                <option value="49">49</option>
+                <option value="50">50</option>
+                <option value="51">51</option>
+                <option value="52">52</option>
+                <option value="53">53</option>
+                <option value="54">54</option>
+                <option value="55">55</option>
+                <option value="56">56</option>
+                <option value="57">57</option>
+                <option value="58">58</option>
+                <option value="59">59</option>
+              </select>
+            </label>
+          </div>
+          <p class="formHint">Be honest!</p>
+      </div>
+    </form>
+    html
+    assert_dom_equal expected, output_buffer
+  end
+
+  def test_fields_for
+
+    flunk('Just do it!')
+
+    uni_form_for(:user, @user) do |f|
+      f.fieldset do
+        output_buffer.concat f.text_field(:first_name, :hint => "Your given name")
+        f.fields_for :messages do |mf|
+          output_buffer.concat mf.text_field :title
+          output_buffer.concat mf.text_area :text
+        end
+      end
+    end
+
+    expected = <<-html
+      <form action="http://www.example.com" method="post" class="uniForm">
+        <fieldset class="blockLabels">
+          <div class="ctrlHolder">
+            <label for="user_first_name">First name</label>
+            <input name="user[first_name]" size="30" type="text" class="textInput" id="user_first_name" value="Marcus"/>
+            <p class="formHint">Your given name</p>
+          </div>
+        </fieldset>
+      </form>
+    html
+
+    assert_dom_equal expected, output_buffer
+  end
+
+  def test_datetime_select
+    flunk 'not implemented'
+    expected = <<-html
+    html
     assert_dom_equal expected, output_buffer
   end
 
