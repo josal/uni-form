@@ -40,7 +40,7 @@ module UniForm #:nodoc:
       add_default_name_and_id(options)
       options.delete('name')
       options['for'] = options.delete('id')
-      content_tag 'label', (options.delete('required') ? "<em>*</em> " : "") + text, options
+      content_tag 'label', ((options.delete('required') ? "<em>*</em> " : "") + text).html_safe, options
     end
   end
 
@@ -206,7 +206,7 @@ module UniForm #:nodoc:
       hint = options.delete :hint
 
       obj = @object || @template.instance_variable_get("@#{@object_name}")
-      errors = obj.errors.on(method)
+      errors = obj.errors[method]
 
       div_content = errors.nil? ? "" : @template.content_tag('p', errors.class == Array ? errors.first : errors, :class => "errorField")
 
