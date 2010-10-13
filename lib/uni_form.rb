@@ -210,14 +210,15 @@ module UniForm #:nodoc:
       hint = options.delete :hint
 
       obj = @object || @template.instance_variable_get("@#{@object_name}")
+
       errors = obj.errors[method]
 
-      div_content = errors.nil? ? "" : @template.content_tag('p', errors.class == Array ? errors.first : errors, :class => "errorField")
+      div_content = errors.blank? ? "".html_safe : @template.content_tag('p', errors.class == Array ? errors.first : errors, :class => "errorField")
 
       wrapper_class = ['ctrlHolder']
-      wrapper_class << 'col' if options.delete(:column)
+      wrapper_class << 'col'.html_safe if options.delete(:column)
       wrapper_class << options.delete(:ctrl_class) if options.has_key? :ctrl_class
-      wrapper_class << 'error' if not errors.nil?
+      wrapper_class << 'error'.html_safe unless errors.empty?
 
       if @multi_field # rendering select inside label
         if multi_tag
