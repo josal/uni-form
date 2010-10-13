@@ -30,6 +30,10 @@ module UniForm #:nodoc:
     def label_for(object_name, method, options = {})
       label = options[:text] ? options[:text] : method.to_s.humanize
       options.delete(:text)
+      obj = object_name.constantize
+      if obj.respond_to? :reflect_on_validations_for && obj.reflect_on_validations_for(method).any? {|v| v.macro == :validates_presence_of}
+        options['required'] = true
+      end
       ActionView::Helpers::InstanceTag.new(object_name, method, self, options.delete(:object)).to_uni_label_tag(label, options)
     end
   end
