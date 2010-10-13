@@ -30,7 +30,7 @@ module UniForm #:nodoc:
     def label_for(object_name, method, options = {})
       label = options[:text] ? options[:text] : method.to_s.humanize
       options.delete(:text)
-      obj = object_name.constantize
+      obj = object_name.classify.constantize
       if obj.respond_to? :reflect_on_validations_for && obj.reflect_on_validations_for(method).any? {|v| v.macro == :validates_presence_of}
         options['required'] = true
       end
